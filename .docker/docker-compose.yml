@@ -1,0 +1,115 @@
+version: '3.8'
+
+networks:
+    default:
+        external: true
+        name: ${COMPOSE_NETWORK_NAME}
+
+volumes:
+    logs:
+        external: true
+        name: logs
+    cache:
+        external: true
+        name: cache
+
+services:
+    nginx:
+        image: ${COMPOSE_PROJECT_NAME}/nginx
+        build:
+            context: .
+            dockerfile: ./nginx/Dockerfile
+            args:
+                - APP_CODE_PATH=${APP_CODE_PATH_CONTAINER}
+                - APP_GROUP=${APP_GROUP}
+                - APP_GROUP_ID=${APP_GROUP_ID}
+                - APP_USER=${APP_USER}
+                - APP_USER_ID=${APP_USER_ID}
+                - APP_HOST=${APP_HOST}
+                - APP_CERT_NAME=${APP_CERT_NAME}
+                - APP_CERT_KEY_NAME=${APP_CERT_KEY_NAME}
+                - APP_CERT_DHPARAM_NAME=${APP_CERT_DHPARAM_NAME}
+                - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}
+                - NGINX_VERSION=${NGINX_VERSION}
+                - TZ=${TIMEZONE}
+        volumes:
+            - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+            - ${APP_CERT_PATH_HOST}:${APP_CERT_PATH_CONTAINER}
+        ports:
+            - "${NGINX_HTTP_PORT_HOST}:80"
+            - "${NGINX_HTTPS_PORT_HOST}:443"
+        networks:
+            default:
+                aliases:
+                    - ${APP_HOST}
+
+    php-fpm:
+        image: ${COMPOSE_PROJECT_NAME}/php-fpm
+        build:
+            context: .
+            dockerfile: ./php-fpm/Dockerfile
+            args:
+                - APP_CACHE_PATH=${APP_CACHE_PATH_CONTAINER}
+                - APP_CODE_PATH=${APP_CODE_PATH_CONTAINER}
+                - APP_GROUP=${APP_GROUP}
+                - APP_GROUP_ID=${APP_GROUP_ID}
+                - APP_LOG_PATH=${APP_LOG_PATH_CONTAINER}
+                - APP_USER=${APP_USER}
+                - APP_USER_ID=${APP_USER_ID}
+                - TARGET_PHP_VERSION=${PHP_VERSION}
+                - TZ=${TIMEZONE}
+        volumes:
+            - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+            - ${APP_KEY_PATH_HOST}:${APP_KEY_PATH_CONTAINER}
+            - cache:${APP_CACHE_PATH_CONTAINER}
+            - logs:${APP_LOG_PATH_CONTAINER}
+        networks:
+            default:
+                aliases:
+                    - fpm.${APP_HOST}
+
+    workspace:
+        image: ${COMPOSE_PROJECT_NAME}/workspace
+        build:
+            context: .
+            dockerfile: ./workspace/Dockerfile
+            args:
+                - APP_CACHE_PATH=${APP_CACHE_PATH_CONTAINER}
+                - APP_CODE_PATH=${APP_CODE_PATH_CONTAINER}
+                - APP_GROUP=${APP_GROUP}
+                - APP_GROUP_ID=${APP_GROUP_ID}
+                - APP_LOG_PATH=${APP_LOG_PATH_CONTAINER}
+                - APP_USER=${APP_USER}
+                - APP_USER_ID=${APP_USER_ID}
+                - TARGET_PHP_VERSION=${PHP_VERSION}
+                - TZ=${TIMEZONE}
+        volumes:
+            - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
+            - ${APP_KEY_PATH_HOST}:${APP_KEY_PATH_CONTAINER}
+            - cache:${APP_CACHE_PATH_CONTAINER}
+            - logs:${APP_LOG_PATH_CONTAINER}
+        ports:
+            - "${WORKSPACE_SSH_PORT_HOST}:22"
+
+    vue-app:
+        image: ${COMPOSE_PROJECT_NAME}/vue-app
+        build:
+            context: .
+            dockerfile: ./vue-app/Dockerfile
+            args:
+                - APP_CODE_PATH=${APP_CODE_PATH_CONTAINER}
+                - HOST_CODE_PATH=${APP_CODE_PATH_HOST}
+                - TARGET_NODE_VERSION=${NODE_VERSION}
+                - TARGET_CLI_VERSION=${CLI_VERSION}
+        volumes:
+            - ${APP_CODE_PATH_HOST}/frontend:${APP_CODE_PATH_CONTAINER}
+            - ${APP_CODE_PATH_HOST}/resources/views:${APP_CODE_PATH_CONTAINER}/template
+            - ${APP_CODE_PATH_CONTAINER}/node_modules
+            - cache:${APP_CACHE_PATH_CONTAINER}
+            - logs:${APP_LOG_PATH_CONTAINER}
+        ports:
+            - "${VUE_CLI_PORT_HOST}:8080"
+        networks:
+            default:
+                aliases:
+                    - ${VUE_CLI_HOST}

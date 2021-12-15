@@ -1,0 +1,18 @@
+ARG TARGET_NODE_VERSION
+FROM node:${TARGET_NODE_VERSION}-alpine
+
+ARG SERVICE_DIR="."
+ARG APP_CODE_PATH
+
+ENV PATH $APP_CODE_PATH/node_modules/.bin:$PATH
+
+COPY $SERVICE_DIR/package.json $APP_CODE_PATH/package.json
+
+WORKDIR "$APP_CODE_PATH"
+
+RUN yarn install
+
+ARG TARGET_CLI_VERSION
+RUN yarn global add @vue/cli@$TARGET_CLI_VERSION
+
+CMD ["yarn", "serve"]
