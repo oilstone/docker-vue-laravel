@@ -35,6 +35,8 @@ services:
         volumes:
             - ${APP_CODE_PATH_HOST}:${APP_CODE_PATH_CONTAINER}
             - ${APP_CERT_PATH_HOST}:${APP_CERT_PATH_CONTAINER}
+        depends_on:
+            - php-fpm
         ports:
             - "${NGINX_HTTP_PORT_HOST}:80"
             - "${NGINX_HTTPS_PORT_HOST}:443"
