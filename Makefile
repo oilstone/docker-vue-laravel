@@ -67,8 +67,12 @@ docker-up: docker-init ## Start all docker containers. To only start one contain
 	$(DOCKER_COMPOSE) up -d $(CONTAINER)
 
 .PHONY: docker-down
-docker-down: docker-init ## Stop all docker containers. To only stop one container, use CONTAINER=<service>
+docker-down: docker-init ## Drop all docker containers. To only drop one container, use CONTAINER=<service>
 	$(DOCKER_COMPOSE) down $(CONTAINER)
+
+.PHONY: docker-stop
+docker-stop: docker-init ## Stop all docker containers. To only stop one container, use CONTAINER=<service>
+	$(DOCKER_COMPOSE) stop $(CONTAINER)
 
 .PHONY: docker-config
 docker-config: docker-init ## Show the docker-compose config with resolved .env values
